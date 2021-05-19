@@ -1,0 +1,31 @@
+ $(".getimagefrometadata").each(function(){
+       let uid = $(this).parents(".videomaindiv").attr("data-uid");
+       $.ajax({
+         type: "GET",
+         url: configOptions.apiEndpoint+"/public/trainer/"+uid,
+         contentType: "application/json; charset=utf-8",
+         success: function(result) {
+             if(result.data.length>0 && result.data[0].imageUrl!=undefined)
+             {
+                var imageelement = document.createElement('img');
+                imageelement.setAttribute('src',result.data[0].imageUrl);
+                imageelement.setAttribute('class','replaceimg');
+                $(".getimagefrometadata").append(imageelement);
+                
+                
+                $("body").on('click',"img.replaceimg",function(){
+                   
+                      $("img.replaceimg").remove();
+                      $(".videoelementprofile").trigger("play");
+                      $("#player-controls").children("div.buttons.ml-3").children("button").attr('data-action','pause');
+                      $("#player-controls").children("div.buttons.ml-3").children("button").children("span").children("svg.fa-play").addClass('is-hidden');
+                      $("#player-controls").children("div.buttons.ml-3").children("button").children("span").children("svg.fa-pause").removeClass('is-hidden');
+                }); 
+             }
+             
+        },
+         failure: function(error) {}
+       });
+
+       
+    });

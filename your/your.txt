@@ -1,0 +1,2 @@
+Description of Code: It will add read more button to theme's blog post listing page
+Tags: read more, custom read more

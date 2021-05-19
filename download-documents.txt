@@ -1,0 +1,32 @@
+Description of Code: Download documents in Zip format from s3
+Tags: NodeJS,
+URL/Zip file: 
+const createZipFile = async({ documentData }) => {
+    try {
+      const s3FileDownloadStreams = documentData.map((item) => {
+        const stream = s3
+          .getObject({
+            Bucket: config.staticServing.bucketName,
+            Key: item.keyPath,
+          })
+          .createReadStream();
+        return {
+          stream,
+          fileName: item.originalFileName,
+        };
+      });
+      let zip = new archiver.create('zip');
+      zip.on('error', (error) => {
+        Logger.log.error('Error occurred in creating zip ', error);
+      });
+      s3FileDownloadStreams.forEach((s3FileDownloadStream) => {
+        zip.append(s3FileDownloadStream.stream, {
+          name: s3FileDownloadStream.fileName,
+        });
+      });
+      await zip.finalize();
+      return zip;
+    } catch (e) {
+      Logger.log.error('Error occurred in creating zip file ', e);
+    }
+};

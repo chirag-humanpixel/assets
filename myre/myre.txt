@@ -1,0 +1,2 @@
+Description of Code: It will redirect general user to home and admin to admin side.
+Tags: login redirect, redirect user to relevent page

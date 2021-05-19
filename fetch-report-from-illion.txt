@@ -1,0 +1,38 @@
+Description of Code: Fetch Report From Illion
+Tags: NodeJS
+URL/Zip file: 
+    {
+      let xmlBody = `
+<x:Envelope xmlns:x="http://schemas.xmlsoap.org/soap/envelope/" xmlns:com="http://www.dnb.com.au/Schema/CommercialBureau">
+    <x:Header/>
+    <x:Body>
+        <com:Request>
+            <com:RequestHeader>
+                <com:Version>1.0</com:Version>
+                <com:Subscriber>
+                    <com:SubscriberId>${organization.integration.illion.subscriberId}</com:SubscriberId>
+                    <com:UserId>${organization.integration.illion.userId}</com:UserId>
+                    <com:Password>${organization.integration.illion.password}</com:Password>
+                </com:Subscriber>
+                <com:ProductCode>${productCode}</com:ProductCode>
+                <com:Environment>${config.illion.environment}</com:Environment>
+                <com:CustomerReference>
+                </com:CustomerReference>
+            </com:RequestHeader>
+            <com:RequestDetails>
+                 <com:LookupMethod>${searchField}</com:LookupMethod>
+                 <com:LookupValue>${searchValue}</com:LookupValue>
+            </com:RequestDetails>
+        </com:Request>
+    </x:Body>              
+</x:Envelope>`;
+      const url = config.illion.apiUrl;
+      const options = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/soap+xml;charset=utf-8',
+        },
+      };
+      let { data } = await axios.post(url, xmlBody, options);
+      return data;
+}
