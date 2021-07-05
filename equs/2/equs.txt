@@ -1,0 +1,2 @@
+Description of Code: You can add ux builder in any custom post type.
+Tags: ux builder in cpt
