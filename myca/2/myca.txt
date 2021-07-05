@@ -1,0 +1,2 @@
+Description of Code: Sort the record via distance from user's current location / enterted location.
+Tags: google distance api usage in woocommerce

@@ -1,0 +1,2 @@
+Description of Code: It will remove unnecessary items from product single page. as well as one other code is there which add hook for Google Map API for admin side.
+Tags: hooks for woocommerce, google map api for admin
