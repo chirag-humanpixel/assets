@@ -1,0 +1,71 @@
+Description of Code: Dynamic Drawer
+Tags: ReactJS
+URL/Zip file: 
+
+//action constants
+export const DRAWER_ACTIONS = {
+  SHOW_DRAWER: 'SHOW_DRAWER',
+  HIDE_DRAWER: 'HIDE_DRAWER',
+};
+
+//initial state
+const drawerInitialState = {
+  visible: false,
+  data: [],
+};
+
+//reducer to manage drawer state changes
+const drawerReducer = (state, action) => {
+  switch (action.type) {
+    case DRAWER_ACTIONS.SHOW_DRAWER:
+      return {
+        visible: true,
+        data: action.data,
+      };
+    case DRAWER_ACTIONS.HIDE_DRAWER:
+      return { ...drawerInitialState };
+
+    default:
+      return state;
+  }
+};
+
+//dynamic drawer component
+function TableLinkDrawer(props) {
+  const { drawerState, closeDrawer } = props;
+  const checkValue = row => {
+    switch (row.type) {
+      case 'dollar':
+        return row?.value ? `$ ${NumberCommaSeparator(row?.value)}` : '-';
+      case 'percent':
+        return row?.value ? `${row?.value} %` : '-';
+      case 'date':
+        return row?.value ? moment(row?.value)?.format('DD-MMM-YYYY') : '-';
+      default:
+        return row?.value || '-';
+    }
+  };
+
+  return (
+    <Drawer header="Contact Details" drawerState={drawerState?.visible} closeDrawer={closeDrawer}>
+      <div className="contacts-grid">
+        {drawerState?.data?.map(row => (
+          <>
+            <div className="title">{row?.label}</div>
+            <div>{checkValue(row)}</div>
+          </>
+        ))}
+      </div>
+    </Drawer>
+  );
+}
+
+TableLinkDrawer.propTypes = {
+  drawerState: PropTypes.shape({
+    visible: PropTypes.bool.isRequired,
+    data: PropTypes.array.isRequired,
+  }).isRequired,
+  closeDrawer: PropTypes.func.isRequired,
+};
+
+TableLinkDrawer.defaultProps = {};

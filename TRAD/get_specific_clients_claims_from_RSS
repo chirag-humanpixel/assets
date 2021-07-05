@@ -1,0 +1,40 @@
+Description of Code: Get client specific claims from RSS
+Tags: NodeJS
+URL/Zip file: 
+const getClaimsDetails = async ({
+  crmIds = [],
+  page = 1,
+  limit = 10,
+}) => {
+  try {
+    const url =
+      'https://apiv4.reallysimplesystems.com/claims?limit=' +
+      limit +
+      '&page=' +
+      page;
+    const organization = await Organization.findOne({ isDeleted: false })
+      .select({ 'integration.rss': 1 })
+      .lean();
+    const options = {
+      method: 'GET',
+      url: url,
+      headers: {
+        Authorization: 'Bearer ' + organization.integration.rss.accessToken,
+      },
+    };
+    if (crmIds.length !== 0) {
+      options.params = {};
+      options.params.q = { accountid: { $in: crmIds } };
+    }
+    const { data } = await axios(options);
+    const claims = data.list.map((claim) => claim.record);
+    const totalCount =
+      data && data.metadata && data.metadata['total_count']
+        ? data.metadata['total_count']
+        : 0;
+    return { claims, totalCount };
+  } catch (e) {
+    Logger.log.error('Error occurred in get claims details');
+    Logger.log.error(e.message || e);
+  }
+};

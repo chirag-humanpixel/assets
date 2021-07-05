@@ -1,0 +1,29 @@
+Description of Code:  Fetch New Zealand entity list by name or by NCN (New Zealand Company Number) from NZ lookup with pagination
+Tags: NodeJS, NCN
+URL/Zip file: 
+const getEntityListByNameFromNZBN = async ({
+  searchString,
+  page = 0,
+  limit = 200,
+}) => {
+  try {
+    const organization = await Organization.findOne({
+      isDeleted: false,
+    })
+      .select({ 'integration.nzbn': 1 })
+      .lean();
+    const url = `https://api.business.govt.nz/services/v4/nzbn/entities?search-term=${searchString}&page-size=${limit}&page=${page}`;
+    const options = {
+      method: 'GET',
+      url: url,
+      headers: {
+        Authorization: `Bearer ${organization.integration.nzbn.accessToken}`,
+      },
+    };
+    const { data } = await axios(options);
+    return data;
+  } catch (e) {
+    Logger.log.error('Error in getting entity list from NZBN lookup ');
+    Logger.log.error(e.message || e);
+  }
+};

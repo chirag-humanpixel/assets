@@ -1,0 +1,25 @@
+Description of Code: Fetch entity data by New Zealand Business Number from NZ lookup
+Tags: NodeJS
+URL/Zip file: 
+const getEntityDetailsByNZBN = async ({ searchString }) => {
+  try {
+    const organization = await Organization.findOne({
+      isDeleted: false,
+    })
+      .select({ 'integration.nzbn': 1 })
+      .lean();
+    const url = `https://api.business.govt.nz/services/v4/nzbn/entities/${searchString}`;
+    const options = {
+      method: 'GET',
+      url: url,
+      headers: {
+        Authorization: `Bearer ${organization.integration.nzbn.accessToken}`,
+      },
+    };
+    const { data } = await axios(options);
+    return data;
+  } catch (e) {
+    Logger.log.error('Error in getting entity details from NZ lookup ');
+    Logger.log.error(e);
+  }
+}
