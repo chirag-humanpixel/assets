@@ -1,0 +1,2 @@
+Description of Code: rewrite url structure of post type post
+Tags: rewrite url structure
