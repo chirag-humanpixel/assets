@@ -1,0 +1,84 @@
+Description of Code: Fetching Year,model and NVIC of an asset using glassGuide.
+Tags: Nodejs, Glassguide
+
+const getListOfYears = async ({ modelTypeCode }) => {
+  try {
+    const xmlBodyStr = `<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Header>
+        <AuthHeader xmlns="http://tempuri.org/">
+            <Username>${config.glassGuide.username}</Username>
+            <Password>${config.glassGuide.password}</Password>
+        </AuthHeader>
+    </soap:Header>
+    <soap:Body>
+        <GetListOfYears xmlns="http://tempuri.org/">
+      <ModelTypeCode>${modelTypeCode}</ModelTypeCode>
+    </GetListOfYears>
+  </soap:Body>
+</soap:Envelope>`;
+    const options = {
+      method: 'post',
+      url: config.glassGuide.url,
+      headers: { 'Content-Type': 'text/xml' },
+      data: xmlBodyStr,
+    };
+    const { data } = await axios(options);
+    let jsonResponse = parser.toJson(data);
+    jsonResponse = JSON.parse(jsonResponse);
+    return jsonResponse;
+  } catch (e) {
+    Logger.log.error('Error in glassguide asset Year', e);
+    return Promise.reject(ERROR_MESSAGE.GENERAL.PASS_CORRECT_FIELDS);
+  }
+};
+
+const getFinalModel = async ({
+  modelTypeCode,
+  yearCreate,
+  manufacturerCode,
+  familyCode,
+  variantName,
+  seriesCode
+}) => {
+  try {
+    const xmlBodyStr = `<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Header>
+      <AuthHeader xmlns="http://tempuri.org/">
+        <Username>${config.glassGuide.username}</Username>
+        <Password>${config.glassGuide.password}</Password>
+      </AuthHeader>
+    </soap:Header>
+    <soap:Body>
+      <GetListOfNVICForAdvancedSearch xmlns="http://tempuri.org/">
+        <ModelTypeCode>${modelTypeCode}</ModelTypeCode>
+        <YearCreate>${yearCreate}</YearCreate>
+        <ManufacturerCode>${manufacturerCode}</ManufacturerCode>
+        <FamilyCode>${familyCode}</FamilyCode>
+        <VariantName>${variantName}</VariantName>
+        <SeriesCode>${seriesCode}</SeriesCode>
+      </GetListOfNVICForAdvancedSearch>
+    </soap:Body>
+  </soap:Envelope>`;
+    const options = {
+      method: 'post',
+      url: config.glassGuide.url,
+      headers: { 'Content-Type': 'text/xml' },
+      data: xmlBodyStr,
+    };
+    const { data } = await axios(options);
+    let jsonResponse = parser.toJson(data);
+    jsonResponse = JSON.parse(jsonResponse);
+    const response = {};
+    response.table = await formatGlassGuideResponse({
+      identifier,
+      resultKey: 'GetListOfNVICForAdvancedSearchResult',
+      responseKey: 'GetListOfNVICForAdvancedSearchResponse',
+      jsonResponse,
+    });
+    return jsonResponse;
+  } catch (e) {
+    Logger.log.error('Error in glassguide asset Final Model', e);
+    return Promise.reject(ERROR_MESSAGE.GENERAL.PASS_CORRECT_FIELDS);
+  }
+};
+
