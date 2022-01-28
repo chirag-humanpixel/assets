@@ -1,6 +1,8 @@
 Description of Code: Sending SMS using transmitSMS service
 Tags: Nodejs, TransmitSMS
 
+
+
 const sendSMS = async ({ message, toNumber }) => {
     try {
       const token = Buffer.from(
