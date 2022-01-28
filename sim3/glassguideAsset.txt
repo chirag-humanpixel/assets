@@ -68,13 +68,6 @@ const getFinalModel = async ({
     const { data } = await axios(options);
     let jsonResponse = parser.toJson(data);
     jsonResponse = JSON.parse(jsonResponse);
-    const response = {};
-    response.table = await formatGlassGuideResponse({
-      identifier,
-      resultKey: 'GetListOfNVICForAdvancedSearchResult',
-      responseKey: 'GetListOfNVICForAdvancedSearchResponse',
-      jsonResponse,
-    });
     return jsonResponse;
   } catch (e) {
     Logger.log.error('Error in glassguide asset Final Model', e);
