@@ -1,0 +1,164 @@
+OTP FEATURE
+
+FUNCTIONALITIES => 
+
+	Auto focus on enter and delete
+	special character not allowed
+	customisable
+	auto submit on length validation
+
+CODE => 
+
+const OtpInput = props => {
+  const {
+    otpInputs,
+    isInputNum,
+    onOtpFill,
+    otpBoxHeight,
+    otpBoxWidth,
+    onFocusOtpBoxClass,
+    otpBoxWithValueClass,
+    ...restProps
+  } = props
+  const otpBlankArray = new Array(otpInputs).fill("")
+  const inputRefs = useRef(otpBlankArray.map(() => createRef()))
+
+  const [otp, setOtp] = useState(otpBlankArray)
+  const isInputValueValid = value => {
+    const isTypeValid = isInputNum ? !isNaN(Number(value)) : typeof value === "string"
+    return isTypeValid && value.trim().length === 1
+  }
+
+  // Focus on next input
+  const focusNextInput = e => {
+    if (e.target.nextSibling) {
+      e.target.nextSibling.focus()
+    }
+  }
+
+  // Focus on previous input
+  const focusPrevInput = e => {
+    if (e.target.previousSibling) {
+      e.target.previousSibling.focus()
+    }
+  }
+
+  // Change OTP value at focused input
+  const changeCodeAtFocus = (value, index) => {
+    setOtp(otp.map((e, i) => (i === index ? value : e)))
+  }
+
+  const handleOnChange = (event, index) => {
+    const { value } = event.target
+    if (isInputValueValid(value)) {
+      changeCodeAtFocus(value, index)
+    }
+  }
+
+  // The content may not have changed, but some input took place hence change the focus
+  const handleOnInput = e => {
+    if (isInputValueValid(REGEX.NUMBER_REGEX.test(e.target.value) && e.target.value)) {
+      focusNextInput(e)
+    } else {
+      // This is a workaround for dealing with keyCode "229 Unidentified" on Android.
+
+      if (!isInputNum) {
+        const { nativeEvent } = e
+
+        if (nativeEvent.data === null && nativeEvent.inputType === "deleteContentBackward") {
+          e.preventDefault()
+          changeCodeAtFocus("")
+          focusPrevInput(e)
+        }
+      }
+    }
+  }
+
+  const otpInputOnKeyDown = (e, index) => {
+    if (e.keyCode === BACKSPACE || e.key === "Backspace") {
+      e.preventDefault()
+      changeCodeAtFocus("", index)
+      focusPrevInput(e)
+    } else if (e.keyCode === DELETE || e.key === "Delete") {
+      e.preventDefault()
+      changeCodeAtFocus("", index)
+    } else if (e.keyCode === LEFT_ARROW || e.key === "ArrowLeft") {
+      e.preventDefault()
+      focusPrevInput(e)
+      if (index === 0) {
+        inputRefs.current[otpInputs - 1].current.focus()
+      }
+    } else if (e.keyCode === RIGHT_ARROW || e.key === "ArrowRight" || e.key === "TAB" || e.key === "Tab") {
+      e.preventDefault()
+      focusNextInput(e)
+      if (index === otpInputs - 1) {
+        inputRefs.current[0].current.focus()
+      }
+    } else if (
+      e.keyCode === SPACEBAR ||
+      e.key === " " ||
+      e.key === "Spacebar" ||
+      e.key === "Space" ||
+      !REGEX.NUMBER_REGEX.test(e.key)
+    ) {
+      e.preventDefault()
+    }
+  }
+
+  const onFocus = (event, index) => {
+    event.target.select()
+    inputRefs?.current?.[index].current?.classList?.add(onFocusOtpBoxClass)
+    otpBlankArray.map((_, i) => index !== i && inputRefs?.current?.[i]?.current?.classList?.remove(onFocusOtpBoxClass))
+  }
+
+  useEffect(() => {
+    inputRefs?.current?.[0]?.current?.classList?.add(onFocusOtpBoxClass)
+    otpBlankArray.map((_, i) => i !== 0 && inputRefs?.current?.[i].current?.classList?.remove(onFocusOtpBoxClass))
+  }, [])
+
+  const onOtpPaste = async e => {
+    const copiedText = e.clipboardData.getData("text/plain")
+
+    if (!isNaN(Number(copiedText)) && !copiedText.includes("e" || ".")) {
+      const separatedText = copiedText.replaceAll(" ", "").split("")
+      if (separatedText.length === otpInputs) {
+        setOtp(separatedText)
+      } else {
+        errorNotification("Clipboard text is not valid OTP")
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (otp.join("").replaceAll(" ", "").length === otpInputs) onOtpFill(otp)
+  }, [otp])
+
+  const otpInputBoxes = otp.map((d, i) => (
+    <input
+      className={`otp-box ${d?.toString().trim().length && otpBoxWithValueClass} 
+      ${document?.activeElement?.name === `otp${i}` ? onFocusOtpBoxClass : ""}`}
+      maxLength={1}
+      ref={inputRefs.current[i]}
+      name={`otp${i}`}
+      key={i}
+      type="number"
+      autoFocus={i === 0}
+      onPaste={e => onOtpPaste(e)}
+      value={d}
+      style={{ height: otpBoxHeight, width: otpBoxWidth }}
+      onChange={e => handleOnChange(e, i)}
+      onInput={e => handleOnInput(e, i)}
+      onKeyDown={e => otpInputOnKeyDown(e, i)}
+      onFocus={e => onFocus(e, i)}
+    />
+  ))
+
+  return (
+    <form className="otp-container" {...restProps}>
+      {otpInputBoxes}
+    </form>
+  )
+}
+	
+
+

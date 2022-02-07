@@ -1,0 +1,47 @@
+Description of Code: Send mail using sendgrid mail service and using nodemailer npm package 
+
+Tags: Nestjs, Sendgrid mail service, Nodemailer NPM package
+
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
+
+@Injectable()
+export class MailServiceService {
+  sendGridAPIKey: string;   // Add sendgrid API key
+  fromEmailAddress: string; // Add from email address
+  constructor(private configService: ConfigService) {
+    this.sendGridAPIKey = this.configService.get('sendGridAPIKey');
+    this.fromEmailAddress = this.configService.get('fromEmailAddress');
+  }
+
+  // This is function that you can use
+  async sendMail({ emails }): Promise<void> {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.sendgrid.net',
+        port: 587,
+        auth: {
+          user: 'apikey',
+          pass: this.sendGridAPIKey,
+        },
+      });
+      const info = await transporter.sendMail({
+        from: `"Fred Foo 👻" <${this.fromEmailAddress}>`, // sender address
+        to: `${emails}`, // list of receivers
+        subject: "Hello ✔", // Subject line
+        text: "Hello world?", // plain text body
+        html: "<b>Hello world?</b>", // html body
+      });
+      console.log(info); // Can check reponse of mail
+    } catch (e) {
+      throw new HttpException(
+        {
+          status: e.status || 'ERROR',
+          message: e.message,
+        },
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+}
