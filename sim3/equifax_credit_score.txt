@@ -1,0 +1,81 @@
+Description of Code: Getting credit-report of user.
+Tags: Nodejs, Equifax Service
+
+const getDetailsFromEquifax = async ({
+  lastName,
+  firstName,
+  streetName,
+  dateOfBirth,
+  suburb,
+  state,
+  postcode,
+  gender,
+  toBeFinanced,
+}) => {
+  try {
+    const xmlBodyStr = `<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:vh="http://vedaxml.com/soap/header/v-header-v1-10.xsd" xmlns:ved="http://vedaxml.com/vxml2/vedascore-apply-v2-0.xsd">
+    <soapenv:Header xmlns:wsa="http://www.w3.org/2005/08/addressing">
+    <wsse:Security xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">
+    <wsse:UsernameToken>
+    <wsse:Username>${config.equifax.username}</wsse:Username>
+    <wsse:Password>${config.equifax.password}</wsse:Password>
+    </wsse:UsernameToken>
+    </wsse:Security>
+    <wsa:To>http://vedaxml.com/sys2/vedascore-apply-v2-0</wsa:To>
+    <wsa:Action>http://vedaxml.com/vedascore-apply/EnquiryRequest</wsa:Action>
+    </soapenv:Header>
+    <soapenv:Body>
+    <ved:request>
+    <ved:enquiry-header>
+    <ved:permission-type-code>${permission-type-code}</ved:permission-type-code>
+    <ved:product-data-level-code>${product-data-level-code}</ved:product-data-level-code>
+    <ved:requested-scores>
+    <ved:scorecard-id>${scorecard-id}</ved:scorecard-id>
+    <ved:scorecard-id>${scorecard-id}</ved:scorecard-id>
+    </ved:requested-scores>
+    </ved:enquiry-header>
+    <ved:enquiry-data>
+    <ved:individual>
+    <ved:current-name>
+    <ved:title>${title}</ved:title>
+    <ved:family-name>${lastName}</ved:family-name>
+    <ved:first-given-name>${firstName}</ved:first-given-name>
+    </ved:current-name>
+    <ved:addresses>
+    <ved:address type="C">
+    <ved:street-name>${streetName}</ved:street-name>
+    <ved:suburb>${suburb}</ved:suburb>
+    <ved:state>${state}</ved:state>
+    <ved:postcode>${postcode}</ved:postcode>
+    <ved:country-code>AUS</ved:country-code>
+    </ved:address>
+    </ved:addresses>
+    <ved:gender-code>${gender}</ved:gender-code>
+    <ved:date-of-birth>${dateOfBirth}</ved:date-of-birth>
+    </ved:individual>
+    <ved:enquiry>
+    <ved:account-type-code>${account-type}</ved:account-type-code>
+    <ved:enquiry-amount currency-code="AUD">${toBeFinanced}</ved:enquiry-amount>
+    <ved:relationship-code>${relationship-code}</ved:relationship-code>
+    <ved:enquiry-client-reference>${enquiry-client-reference}</ved:enquiry-client-reference>
+    </ved:enquiry>
+    </ved:enquiry-data>
+    </ved:request>
+    </soapenv:Body>
+   </soapenv:Envelope>`;
+    const options = {
+      method: 'post',
+      url: config.equifax.url,
+      headers: { 'Content-Type': 'text/xml' },
+      data: xmlBodyStr,
+      timeout: 60000,
+    };
+    const response = await axios(options);
+    const data = parser.toJson(response?.data);
+    const report = JSON.parse(data);
+    return report;
+  } catch (e) {
+    Logger.log.error('error in equifax api', e);
+    Promise.reject(ERROR_MESSAGE.GENERAL.SERVER_SIDE_ISSUE);
+  }
+};
