@@ -1,0 +1,55 @@
+Description of Code: Catch all HttpException errors using filter
+
+Tags: Nestjs, HttpException, ExceptionFilter, UseFilters
+
+/*
+    -> We have to import below modules
+*/
+import {
+    ExceptionFilter,
+    Catch,
+    ArgumentsHost,
+    HttpException,
+  } from '@nestjs/common';
+import { Response } from 'express';
+
+/*
+    -> This will catch all errors(HttpException errors) where we set this filter (like in controller)
+*/
+@Catch(HttpException)
+export class HttpExceptionFilter implements ExceptionFilter {
+    catch(exception: HttpException, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const response = ctx.getResponse<Response>();
+        const status = exception.getStatus();
+        const responseObject: any = exception.getResponse();
+        /*
+            -> Below if condition is used for converting array response to string
+            -> Generally this will help into DTO error response because DTO throw error in array form
+            -> So we can convert array response to object or string in this
+            -> Below else condition is used for regular errors (like to convert all error messages into specific format)
+        */
+        if (Array.isArray(responseObject.message)) {
+        response.status(status).json({
+            status: 'ERROR',
+            messageCode: responseObject.message[0]
+                .toUpperCase()
+                .split(' ')
+                .join('_'),
+            message: responseObject.message[0],
+        });
+        } else {
+        response.status(status).json({
+            status: responseObject.status,
+            messageCode:
+                responseObject.messageCode ||
+                responseObject.message.toUpperCase().split(' ').join('_'),
+            message: responseObject.message,
+        });
+        }
+    }
+}
+  
+/*
+    -> Where we have to use above exception filter we simply import this file and use like "@UseFilters(HttpExceptionFilter)"
+*/
