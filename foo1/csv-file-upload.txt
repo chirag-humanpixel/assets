@@ -1,0 +1,55 @@
+Description of Code: Read CSV file
+
+Tags: Nestjs, multer, csvtojson
+
+/*
+    Required modules for controller file: 
+        -> FileInterceptor from @nestjs/platform-express
+        -> Post, HttpCode, HttpStatus, UseInterceptors, UploadedFile from @nestjs/common
+        -> memoryStorage from multer
+
+    Below is sample API for csv file upload using multer
+        -> Here using memoryStorage from multer to store data in-memory(like in one variable)
+*/
+@Post('import')
+  @UseInterceptors(
+    FileInterceptor('csv-file', {
+      storage: memoryStorage(),
+      fileFilter: fileFilterForCSV,
+    }),
+  )
+  @HttpCode(HttpStatus.OK)
+  async import(@UploadedFile() csvFileData) {
+    await this.importService.importCSV({   // importCSV is function of your service file
+      csvFileData,
+    });
+    return; // here you can return as you like
+  }
+
+/*
+    Below is sample utils file for fileFilter which is used in above API ("fileFilterForCSV" is the function which is exported from below utils file)
+        -> This function is to validate that it's CSV file
+*/
+export const fileFilterForCSV = (req, file, callback) => {
+    if (!file.originalname.match(/\.(csv)$/)) {
+      // here you can throw error
+    }
+
+/*
+    Required modules for service file: 
+        -> csvtojson npm package
+
+    Below is sample service file which is used in above API
+        -> This function is to validate that it's CSV file
+*/
+async importCSV({ csvFileData }) {
+    // here you can use try catch to catch errors
+    if (!csvFileData) {
+        // here you can throw error if file not found
+    }
+    const csvJSONData = await csv().fromString(csvFileData.buffer.toString());
+    if (!csvJSONData || csvJSONData?.length === 0) {
+        // here you can throw error if CSV file is empty
+    }
+    // you will get data in csvJSONData variable after that you can process through that data
+}
