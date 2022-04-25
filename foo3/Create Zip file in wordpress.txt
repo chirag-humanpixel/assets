@@ -1,0 +1,7 @@
+$zip_file = get_home_path().'/wp-content/themes/{theme_name}/zip/Shipping_Label.zip'; // This path is for where you want to save the zip file
+$zip = new ZipArchive();
+if ( $zip->open($zip_file, ZipArchive::CREATE) !== TRUE) {
+    exit("message");
+}
+$zip->addFile(get_home_path().'/wp-content/themes/{theme_name}/demofile.txt', 'demofile.txt'); // This path is for which file you want to add in zip file.
+$zip->close();
