@@ -1,0 +1,138 @@
+Description of Code: Fetching company details using ABN NUmber.
+Tags: Nodejs, ABR Lookup
+
+/*
+ Format ABR lookup response
+ */
+const extractABRLookupData = async ({ entityData }) => {
+  try {
+    const response = {};
+    if (entityData && entityData.response) {
+      const entityDetails =
+        entityData.response.businessEntity202001 ||
+        entityData.response.businessEntity201408;
+      if (entityDetails) {
+        if (entityDetails.ABN) response.abn = entityDetails.ABN.identifierValue;
+        if (entityDetails.entityStatus) {
+          if (
+            entityDetails.entityStatus.effectiveFrom &&
+            entityDetails.entityStatus.entityStatusCode
+          ) {
+            response.registeredDate = moment(
+              entityDetails.entityStatus.effectiveFrom,
+            ).format('DD-MM-YYYY');
+            response.isActive = entityDetails.entityStatus.entityStatusCode;
+          } else if (entityDetails.entityStatus.length !== 0) {
+            /* eslint-disable array-callback-return */
+            const entityRegistration = entityDetails.entityStatus.find((i) => {
+              if (i.effectiveTo === '0001-01-01') {
+                return i;
+              }
+            });
+            if (entityRegistration) {
+              response.registeredDate = moment(
+                entityRegistration.effectiveFrom,
+              ).format('DD-MM-YYYY');
+              response.isActive = entityRegistration.entityStatusCode;
+            }
+          }
+        }
+        if (entityDetails.ASICNumber)
+          response.acn =
+            typeof entityDetails.ASICNumber === 'string'
+              ? entityDetails.ASICNumber
+              : '';
+        if (entityDetails.goodsAndServicesTax)
+          response.gstStatus = moment(
+            entityDetails.goodsAndServicesTax.effectiveFrom,
+          ).format('DD-MM-YYYY');
+        if (entityDetails.mainBusinessPhysicalAddress) {
+          response.stateCode =
+            entityDetails.mainBusinessPhysicalAddress.stateCode;
+          response.postCode =
+            entityDetails.mainBusinessPhysicalAddress.postcode;
+        }
+    
+        if (entityDetails.mainName) {
+          response.entityName = Array.isArray(entityDetails.mainName)
+            ? entityDetails.mainName[0].organisationName
+            : entityDetails.mainName.organisationName;
+        }
+        if (entityDetails.legalName) {
+          response.entityName = `${entityDetails.legalName?.familyName},${entityDetails.legalName?.givenName}`;
+          if (
+            Object.keys(entityDetails.legalName?.otherGivenName).length !== 0
+          ) {
+            response.entityName = `${entityDetails.legalName?.familyName},${entityDetails.legalName?.givenName} ${entityDetails.legalName?.otherGivenName} `;
+          }
+        }
+        const businessName =
+          entityDetails.mainTradingName || entityDetails.businessName;
+        if (businessName)
+          response.businessName =
+            businessName.organisationName ||
+            typeof businessName.organisationName === 'string'
+              ? businessName.organisationName
+              : businessName[0].organisationName;
+      } else {
+        return Promise.reject(ERROR_MESSAGE.GENERAL.NO_DATA_FOUND);
+      }
+    } else {
+      return Promise.reject(ERROR_MESSAGE.GENERAL.NO_DATA_FOUND);
+    }
+    return response;
+  } catch (e) {
+    Logger.log.error('Error in extract ABR lookup data');
+    Logger.log.error(e.message || e);
+  }
+};
+
+/*
+ Get Company details by ABN Number
+ */
+const getEntityDetailsByABN = async ({ searchString }) => {
+  try {
+    const xmlBodyStr = `<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+      <SearchByABNv201408 xmlns="http://abr.business.gov.au/ABRXMLSearch/">
+        <searchString>${searchString}</searchString>
+        <includeHistoricalDetails>N</includeHistoricalDetails>
+        <authenticationGuid>${config.abrLookup.guid}</authenticationGuid>
+      </SearchByABNv201408>
+    </soap:Body>
+  </soap:Envelope>`;
+    const options = {
+      method: 'post',
+      url: config.abrLookup.url,
+      headers: { 'Content-Type': 'text/xml' },
+      data: xmlBodyStr,
+      timeout: 60000,
+    };
+    const { data } = await axios(options);
+    let jsonData = parser.toJson(data);
+    jsonData = JSON.parse(jsonData);
+    if (
+      jsonData['soap:Envelope']['soap:Body'].SearchByABNv201408Response
+        ?.ABRPayloadSearchResults.response.exception
+    ) {
+      return Promise.reject(ERROR_MESSAGE.ABR_LOOKUP.INVALID_ABN);
+    }
+    return await extractABRLookupData({
+      entityData:
+        jsonData['soap:Envelope']['soap:Body'].SearchByABNv201408Response
+          ?.ABRPayloadSearchResults,
+    });
+  } catch (e) {
+    Logger.log.error('Error occurred in get details by ABN', e);
+    Promise.reject(ERROR_MESSAGE.ABR_LOOKUP.INVALID_ABN);
+  }
+};
+
+
+/**
+ * Export Module
+ */
+module.exports = {
+  getEntityDetailsByABN,
+};
+
