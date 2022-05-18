@@ -1,0 +1,47 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script
+      type="text/javascript"
+      language="javascript"
+      src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"
+    ></script>
+    <link rel="stylesheet" href="style.css" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="repeater">
+      <div data-repeater-list="repeater_box_list">
+        <div data-repeater-item class="repeater_box">
+          <div class="input_box">
+            <input type="text" class="form-control" name="First Name" />
+          </div>
+          <div class="input_box">
+            <input type="text" class="form-control" name="Last Name" />
+          </div>
+          <div class="input_box">
+            <input type="text" class="form-control" name="Position" />
+          </div>
+          <div class="input_box">
+            <input type="text" class="form-control" name="Phone Number" />
+          </div>
+          <input
+            data-repeater-delete
+            type="button"
+            class="delect-icon"
+            value="-"
+          />
+        </div>
+      </div>
+      <input class="AddButton" data-repeater-create type="button" value="Add" />
+    </div>
+    <script type="text/javascript" language="javascript" src="main.js"></script>
+    <script
+      type="text/javascript"
+      language="javascript"
+      src="https://cdnjs.cloudflare.com/ajax/libs/jquery.repeater/1.2.1/jquery.repeater.min.js"
+    ></script>
+  </body>
+</html>

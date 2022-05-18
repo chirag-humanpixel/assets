@@ -1,0 +1,27 @@
+.repeater_box {
+  display: flex;
+}
+.input_box {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+.delect-icon {
+  min-width: 27px;
+  padding: 0px;
+  border: 1px solid rgb(0 0 0 / 40%);
+  background: #fff;
+  color: #1c7c30;
+  font-weight: bold;
+  font-size: 25px;
+  cursor: pointer;
+}
+.AddButton {
+  background: #1c7c30;
+  color: #fff;
+  padding: 0px 20px;
+}
+input {
+  height: 30px;
+  border-radius: 5px;
+  border: 1px solid #1c7c30 !important;
+}
