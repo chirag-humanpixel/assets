@@ -1,0 +1,82 @@
+Description of Code: Helpers to raise support tickets in zendesk and update comments using webhook 
+Tags: NestJS, Zendesk, Support Tickets
+URL/Zip file:
+
+/**
+ * Raise Support Ticket
+ */
+async addSupportService(bodyData) {
+    try {
+      const body = {
+        request: {
+          requester: {
+            name:
+              this.request.user.firstName + ' ' + this.request.user.lastName,
+          },
+          subject: `Ticket raised from ${this.request.user.firstName}`,
+          comment: { body: bodyData.supportQuery },
+        },
+      };
+
+      const config: any = {
+        method: 'post',
+        url: 'https://hp211.zendesk.com/api/v2/requests',
+        headers: {
+          Authorization: `Basic ${this.zendeskHeader}`,
+          'Content-Type': 'application/json',
+        },
+        data: body,
+      };
+
+      const raisedTicket = (await axios(config)).data;
+      const ticket = new this.supportModel({
+        organizationId: this.request.user.organizationId,
+        raisedBy: this.request.user._id,
+        ticketID: raisedTicket.request.id,
+        query: raisedTicket.request.description,
+      });
+
+      const data = await ticket.save();
+      return {
+        organizationId: data.organizationId,
+        raisedBy: data.raisedBy,
+        query: data.query,
+      };
+    } catch (e) {
+      catchError({ e });
+    }
+}
+
+
+/**
+ * Update Comment using Webhook
+ */
+async updateCommentWebHook(body) {
+    try {
+      const id = Number(body.ID);
+      const config: any = {
+        method: 'get',
+        url: `https://hp211.zendesk.com/api/v2/requests/${id}/comments/`,
+        headers: {
+          Authorization: `Basic ${this.zendeskHeader}`,
+          'Content-Type': 'application/json',
+        },
+      };
+      const data = (await axios(config)).data;
+      const comment = [];
+      for (let i = 1; i < data?.comments.length; i++) {
+        comment.push(data?.comments[i].body);
+      }
+      const query = await this.supportModel.findOne(
+        { ticketID: id, isDeleted: false },
+        { raisedBy: 1 },
+      );
+      query.comment = comment;
+      await query.save();
+      await this.socketService.sendNotificationForTicketUpdate(query.raisedBy);
+    } catch (e) {
+      catchError({ e });
+    }
+  }
+}
+
