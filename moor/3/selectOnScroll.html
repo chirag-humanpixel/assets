@@ -1,0 +1,94 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scroll To Top</title>
+    <style>
+      .select-box {
+        width: 100%;
+        padding: 20px;
+        position: fixed;
+        top: 0;
+        background-color: #fff;
+        display: flex;
+        align-items: center;
+      }
+      .select-box select {
+        width: 50%;
+        height: 40px;
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 0 10px #ccc;
+      }
+      .select-box div {
+        box-shadow: 0 0 10px #ccc;
+        width: 30px;
+        height: 30px;
+        margin-left: 20px;
+        border-radius: 99px;
+      }
+      .select-box-scroll {
+        margin-top: 80px;
+      }
+      .select-box-scroll div {
+        height: 600px;
+        width: auto;
+        border-radius: 8px;
+        margin: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 50px;
+        color: #fff;
+        box-shadow: 0 0 10px #ccc;
+      }
+
+      .one {
+        background-color: #009688;
+      }
+      .two {
+        background-color: #9c27b0;
+      }
+      .three {
+        background-color: #673ab7;
+      }
+      .four {
+        background-color: #e91e63;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="select-box">
+      <select class="select-category-drop">
+        <option>Select Category</option>
+        <option value="one">One</option>
+        <option value="two">Two</option>
+        <option value="three">Three</option>
+        <option value="four">Four</option>
+      </select>
+      <div></div>
+    </div>
+    <div class="select-box-scroll">
+      <div class="one" id="one">one</div>
+      <div class="two" id="two">two</div>
+      <div class="three" id="three">three</div>
+      <div class="four" id="four">four</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <script>
+      jQuery(".select-category-drop").change(function () {
+        var responseId = jQuery(this).val();
+        jQuery(".select-box div").removeClass();
+        jQuery(".select-box div").addClass(responseId);
+        $("html, body").animate(
+          {
+            scrollTop: $("#" + responseId + "").offset().top - 82,
+          },
+          1000
+        );
+      });
+    </script>
+  </body>
+</html>
