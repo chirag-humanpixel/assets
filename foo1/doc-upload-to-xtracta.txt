@@ -1,0 +1,42 @@
+Description of Code: Upload document to different workflow into Xtracta
+Tags: Nestjs, xtracta
+
+/**
+   * Helper function to upload document to Xtracta
+   * @param file - uploaded file data
+   * @param type - uploaded document type
+   */
+  async uploadDocumentToXtracta({ file, type }) {
+    try {
+      const formData = new FormData();
+
+      const workflow =
+        type == 'invoice'
+          ? this.invoiceWorkFlowId
+          : type == 'statement'
+          ? this.statementWorkFlowId
+          : this.expenseWorkFlowId;
+
+      formData.append('api_key', this.xtractaAPIKey);
+      formData.append('workflow_id', workflow);
+      formData.append('userfile', file);
+
+      const options: any = {
+        method: 'post',
+        url: this.xtractaAPIUrl + '/upload',
+        headers: {
+          ...formData.getHeaders(),
+        },
+        data: formData,
+      };
+
+      const { data } = await axios(options);
+      this.addDocumentDetailsToDB({ body: data, type });
+    } catch (e) {
+      this.logger.error(
+        'Error occurred in upload file in xtracta- ',
+        e.message,
+      );
+      catchError({ e });
+    }
+  }

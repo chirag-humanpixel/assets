@@ -1,0 +1,275 @@
+Description of Code: Uploading Files in Workdrive.
+Tags: Nodejs, zoho Workdrive, mongoDB
+
+/**
+ *
+ * This Method is Used for generate token for workdrive
+ *
+ */
+
+const generateWorkDriveAccessToken = async () => {
+  try {
+    const requestDetails = {
+      method: 'post',
+      url: `${config.zohoWorkDrive.tokenUrl}?refresh_token=${config.zohoWorkDrive.refreshToken}&client_id=${config.zohoWorkDrive.clientId}&client_secret=${config.zohoWorkDrive.clientSecret}&grant_type=${config.zohoWorkDrive.grantType}`,
+    };
+    const s = await axios(requestDetails);
+    return s.data.access_token;
+  } catch (e) {
+    Logger.log.error('In call of generate access token.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for get user info
+ *
+ */
+
+const getUserInfo = async () => {
+  try {
+    Logger.log.info('In call of generation of ZOHO WorkDrive User Info');
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    // API
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const requestDetails = {
+      method: 'get',
+      url: 'https://www.zohoapis.com/workdrive/api/v1/users/me',
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+      },
+    };
+
+    const userInfo = await axios(requestDetails);
+    return {
+      zuid: userInfo.data.data.id,
+      teamId: userInfo.data.data.attributes.preferred_team_id,
+    };
+  } catch (e) {
+    Logger.log.error('In call of user info.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for getting curretnt team member
+ *
+ */
+
+const getCurrentTeamMember = async (teamId) => {
+  try {
+    Logger.log.info(
+      'In call of generation of ZOHO WorkDrive Current team member',
+    );
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    // API
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const requestDetails = {
+      method: 'get',
+      url: `https://www.zohoapis.com/workdrive/api/v1/teams/${teamId}/currentuser`,
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+      },
+    };
+
+    const currentTeamMem = await axios(requestDetails);
+    return { teamMemberId: currentTeamMem.data.data.id };
+  } catch (e) {
+    Logger.log.error('In call of current team member.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for get folder Id from
+ * Not is use
+ *
+ */
+
+const getMyFoldersId = async (teamMemberId) => {
+  try {
+    Logger.log.info('In call of generation of ZOHO WorkDrive My folder Id');
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    // API
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const requestDetails = {
+      method: 'get',
+      url: `https://www.zohoapis.com/workdrive/api/v1/users/${teamMemberId}/privatespace`,
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+      },
+    };
+    const myfolderDetails = await axios(requestDetails);
+    const id = myfolderDetails.data.data.map((x) => x.id);
+    return { folderId: id };
+  } catch (e) {
+    Logger.log.error('In call of my folder id.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for create folder in Zoho workdrive
+ *
+ */
+
+const createFolder = async (name, parentId) => {
+  try {
+    Logger.log.info('In call of generation of ZOHO WorkDrive Create Folder');
+    const data = `{\n   data: {\n      attributes: {\n         name: ${name},\n         parent_id: ${parentId}\n      },\n      type: "files"\n   }\n}`;
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const requestDetails = {
+      method: 'post',
+      url: 'https://www.zohoapis.com/workdrive/api/v1/files',
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        'Content-Type': 'text/plain',
+      },
+      data,
+    };
+
+    const folderData = await axios(requestDetails);
+    return {
+      folderCreatedId: folderData.data.data.id,
+      applicationId: name,
+    };
+  } catch (e) {
+    Logger.log.error('In call of createFolder.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for uploading file to Zoho WorkDrive
+ *
+ */
+
+const uploadFile = async (parentId, fileName, filePath) => {
+  Logger.log.info('In call of generation of ZOHO WorkDrive Upload File');
+  try {
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    // API
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const data = new FormData();
+    data.append('filename', fileName);
+    data.append('parent_id', parentId);
+    data.append('override-name-exist', 'true');
+    data.append('content', fs.createReadStream(filePath));
+
+    const options = {
+      method: 'post',
+      url: 'https://www.zohoapis.com/workdrive/api/v1/upload',
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        ...data.getHeaders(),
+      },
+      data,
+    };
+
+    const response = await axios(options);
+
+    if (response.data) {
+      return response.data.data[0]?.attributes?.Permalink ?? '';
+    }
+    return '';
+  } catch (e) {
+    Logger.log.error('Error occurred generation of zoho upload files', e);
+  }
+};
+
+/**
+ *
+ * This Method is Used for remove file from zoho workdrive
+ * Curretnly not implemented
+ *
+ */
+
+const moveFileToTrash = async (resourceId) => {
+  try {
+    Logger.log.info(
+      'In call of generation of ZOHO WorkDrive Move File To Trash',
+    );
+    const tokenDB = await Credential.findOne({
+      zohoWorkDriveToken: { $ne: null },
+    }).lean();
+    let token;
+    // API
+    if (!tokenDB) {
+      token = await generateWorkDriveAccessToken();
+    } else {
+      token = tokenDB.zohoWorkDriveToken;
+    }
+    const data =
+      '{\n   data: {\n      attributes: {\n         status: "51"\n      },\n      type: "files"\n   }\n}';
+
+    const requestDetails = {
+      method: 'patch',
+      url: `https://www.zohoapis.com/workdrive/api/v1/files/${resourceId}`,
+      headers: {
+        Authorization: `Zoho-oauthtoken ${token}`,
+        'Content-Type': 'text/plain',
+      },
+      data,
+    };
+
+    await axios(requestDetails);
+  } catch (e) {
+    Logger.log.error('In call of move file to trash.', e);
+    return Promise.reject(ERROR_MESSAGE.ZOHO.GET_DATA);
+  }
+};
+
+/**
+ *
+ * This Method is Used for creating new folder in zoho workdrive
+ *
+ */
+const createNewFolder = async (folderName) => {
+  const { teamId } = await getUserInfo();
+  const { teamMemberId } = await getCurrentTeamMember(teamId);
+  const { folderId } = await getMyFoldersId(teamMemberId);
+  const { folderCreatedId } = await createFolder(folderName, folderId);
+
+  return folderCreatedId;
+};
